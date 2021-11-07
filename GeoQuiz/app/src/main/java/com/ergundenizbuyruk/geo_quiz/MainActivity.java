@@ -3,6 +3,7 @@ package com.ergundenizbuyruk.geo_quiz;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;//View Binding
     private Question[] questionBank;// Sorulari tutan liste
     private int currentIndex = 0;// listedeki hangi soruda oldugumuzu anladigimiz imlec
+    private int dogruSayisi = 0, yanlisSayisi = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,12 +37,16 @@ public class MainActivity extends AppCompatActivity {
 
         // ilk soruyu soru textinde göster.
         updateQuestion();
+        binding.previousButton.setVisibility(View.INVISIBLE);
 
         // True butonuna basildiginda calissin.
         binding.trueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 checkAnswer(true);// Cevabi kontrol et.
+                // Her soruya cevap verdiginde butonlari gorunmez yap ki tekrar cevap vermesin.
+                binding.trueButton.setVisibility(View.INVISIBLE);
+                binding.falseButton.setVisibility(View.INVISIBLE);
             }
         });
 
@@ -49,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 checkAnswer(false); // Cevabi kontrol et.
+                // Her soruya cevap verdiginde butonlari gorunmez yap ki tekrar cevap vermesin.
+                binding.trueButton.setVisibility(View.INVISIBLE);
+                binding.falseButton.setVisibility(View.INVISIBLE);
             }
         });
 
@@ -56,11 +65,24 @@ public class MainActivity extends AppCompatActivity {
         binding.nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // OutIndexOfException yememek icin hep moduna bak.
-                currentIndex = (++currentIndex) % questionBank.length;
+                currentIndex++;
+                if(currentIndex == questionBank.length) {// soru bitmis demektir.
+                    binding.nextButton.setVisibility(View.INVISIBLE);
+                    String message = "Tebrikler!\nToplam Puanınız 100 üzerinden: ";
+                    int toplamPuan = (int)(dogruSayisi/(float)(dogruSayisi + yanlisSayisi) * 100);
+                    message += toplamPuan;
 
-                // Diger soruyu soru textinde göster.
-                updateQuestion();
+                    Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+                } else {
+                    binding.trueButton.setVisibility(View.VISIBLE);
+                    binding.falseButton.setVisibility(View.VISIBLE);
+
+                    // Diger soruyu soru textinde göster.
+                    updateQuestion();
+                }
+                if(currentIndex != 0) {
+                    binding.previousButton.setVisibility(View.VISIBLE);
+                }
             }
         });
 
@@ -68,15 +90,18 @@ public class MainActivity extends AppCompatActivity {
         binding.previousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // OutIndexOfException yememek icin hep moduna bak.
-                // Mod alindigi icin +6 bir sey degistirmez sadece negatif olmamasini korudum.
-                currentIndex = (--currentIndex + 6) % questionBank.length;
+                if (currentIndex != 0) {
+                    // OutIndexOfException yememek icin hep moduna bak.
+                    // Mod alindigi icin +6 bir sey degistirmez sadece negatif olmamasini korudum.
+                    currentIndex = (--currentIndex + 6) % questionBank.length;
 
-                // Diger soruyu soru textinde göster.
-                updateQuestion();
+                    // Diger soruyu soru textinde göster.
+                    updateQuestion();
+                } else {
+                    binding.previousButton.setVisibility(View.INVISIBLE);
+                }
             }
         });
-
     }
 
     // indexin belittigi soruyu textViewde goster.
@@ -89,9 +114,10 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean userAnswer) {
         if(questionBank[currentIndex].getAnswer() == userAnswer) {
             Toast.makeText(getApplicationContext(), R.string.correct_toast, Toast.LENGTH_SHORT).show();
+            dogruSayisi++;
         } else {
             Toast.makeText(getApplicationContext(), R.string.incorrect_toast, Toast.LENGTH_SHORT).show();
+            yanlisSayisi++;
         }
     }
-
 }
